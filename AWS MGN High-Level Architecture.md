@@ -15,13 +15,13 @@ It uses:
 
 ### Components Explained:
 
-1: Source Server
+# 1: Source Environment (On-Prem / Azure / Other Cloud)
+ - Physical or Virtual Servers
+ - MGN Agent installed
+ - Outbound internet / DX / VPN connectivity
+ - No inbound access required
 
-- Physical / VM / Cloud VM
-
-- Has MGN Agent installed
-
-2: MGN Agent
+# 2: MGN Agent
 
 - Captures disk writes at block level
 
@@ -29,22 +29,48 @@ It uses:
 
 - Sends data over TCP 1500 to AWS
 
-3: Replication Server (Staging Area)
+# 3: AWS Staging Area (Replication Zone)
+
+Located in a dedicated Staging Subnet
+Components:
+
+- Replication Server (Lightweight EC2)
+- Staging Security Group
+- Staging EBS Volumes
+- IAM Roles
+
+  Function:
+ - Receives block-level data from source
+ - Writes data to EBS volumes
+ - Maintains continuous replication state
+
+# 4: Replication Server (Staging Area)
 
 - Lightweight EC2 instance
 
 - Receives data from agent
 
-- Writes to EBS volumes
+- Writes to EBS volumes ->  Continuous updated replica disks
 
-4: EBS Volumes
+# 5: Target Environment (Production VPC)
 
-- Continuous updated replica disks
+- Launch Template
 
-5: Launch Template
+- Target EC2 instance
 
- - Used to launch final EC2 during cutover
+- Target Security Group
 
+- Final EBS volumes
+
+- Load Balancer (if needed)
+
+During cutover:
+
+ - Replication stops briefly
+
+ - Latest data synchronized
+
+ - EC2 launched using replicated volumes
 
 How MGN Agent Works Internally
 ----------------------------------
@@ -112,7 +138,8 @@ It is purely a replication engine.
 
 ## Detailed Replication Flow Diagram
 
-<img width="362" height="432" alt="image" src="https://github.com/user-attachments/assets/ddd74a7a-679f-467e-a217-ed3d4c80ade4" />
+<img width="413" height="516" alt="image" src="https://github.com/user-attachments/assets/bee7f4a4-d25b-4933-9a91-04207298fa37" />
+
 
 
 ## What Happens During Cutover
